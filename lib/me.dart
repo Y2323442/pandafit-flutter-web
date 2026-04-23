@@ -12,16 +12,16 @@ class _MePageState extends State<MePage> {
   static const Color mainGreen = Color(0xFFD1E683);
   static const Color darkCard = Color(0xFF1A1C1E);
 
-  // 多语言
-  bool isChinese = true;
+  // 👇 默认改成英文
+  bool isChinese = false;
 
   // 假用户数据
   final Map<String, dynamic> userData = {
-    "username": "运动达人",
+    "username": "Athlete",
     "email": "workout@demo.com",
-    "level": 5,
-    "totalSignInDays": 30,
-    "xp": 120,
+    "level": 1,
+    "totalSignInDays": 1,
+    "xp": 1,
     "streakDays": 7,
   };
 
@@ -111,13 +111,13 @@ class _MePageState extends State<MePage> {
                     context,
                     Icons.person_outline,
                     isChinese ? "账号安全" : "Account Security",
-                    () => _showDemoMsg("账号安全"),
+                    () => _showDemoMsg(isChinese ? "账号安全" : "Account Security"),
                   ),
                   _menuItem(
                     context,
                     Icons.notifications_none,
                     isChinese ? "消息通知" : "Notifications",
-                    () => _showDemoMsg("消息通知"),
+                    () => _showDemoMsg(isChinese ? "消息通知" : "Notifications"),
                   ),
                   _menuItem(
                     context,
@@ -137,20 +137,20 @@ class _MePageState extends State<MePage> {
                     context,
                     Icons.workspace_premium,
                     isChinese ? "会员订阅" : "Premium Membership",
-                    () => _showDemoMsg("会员订阅"),
+                    () => _showDemoMsg(isChinese ? "会员订阅" : "Premium Membership"),
                     isPremium: true,
                   ),
                   _menuItem(
                     context,
                     Icons.help_outline,
                     isChinese ? "帮助与支持" : "Support & Help",
-                    () => _showDemoMsg("帮助与支持"),
+                    () => _showDemoMsg(isChinese ? "帮助与支持" : "Support & Help"),
                   ),
                   _menuItem(
                     context,
                     Icons.info_outline,
                     isChinese ? "关于我们" : "About Us",
-                    () => _showDemoMsg("关于我们"),
+                    () => _showDemoMsg(isChinese ? "关于我们" : "About Us"),
                   ),
                 ]),
               ),
@@ -174,7 +174,7 @@ class _MePageState extends State<MePage> {
               _animatedEntrance(
                 delay: 620,
                 child: TextButton(
-                  onPressed: () => _showDemoMsg("退出登录"),
+                  onPressed: () => _showDemoMsg(isChinese ? "退出登录" : "Log Out"),
                   child: Text(
                     isChinese ? "退出登录" : "Log Out",
                     style: const TextStyle(
@@ -194,7 +194,7 @@ class _MePageState extends State<MePage> {
 
   void _showDemoMsg(String title) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("$title（离线演示）")),
+      SnackBar(content: Text("$title (Demo)")),
     );
   }
 

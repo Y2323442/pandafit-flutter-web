@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'app_controller.dart';
 
 class AuthPage extends StatefulWidget {
@@ -168,37 +167,27 @@ class _AuthPageState extends State<AuthPage> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: darkCard,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(18),
                           ),
+                          elevation: 0,
                         ),
                         onPressed: controller.isAuthenticating ? null : _submit,
                         child: controller.isAuthenticating
                             ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.4,
-                                  color: mainGreen,
-                                ),
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD1E683)),
                               )
                             : Text(
-                                _isRegisterMode ? 'Create Account' : 'Enter App',
-                                style: const TextStyle(
-                                  color: mainGreen,
-                                  fontWeight: FontWeight.bold,
+                                _isRegisterMode ? 'Register' : 'Login',
+                                style: TextStyle(
                                   fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: mainGreen,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'API Base URL: ${controller.baseUrl}',
-                      style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.45),
-                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -219,19 +208,20 @@ class _AuthPageState extends State<AuthPage> {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? darkCard : const Color(0xFFF4F7EC),
-            borderRadius: BorderRadius.circular(18),
+            color: selected ? darkCard : bgColor,
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: selected ? mainGreen : Colors.black54,
-              fontWeight: FontWeight.bold,
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: selected ? mainGreen : Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
             ),
           ),
         ),
@@ -243,22 +233,24 @@ class _AuthPageState extends State<AuthPage> {
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    TextInputType? keyboardType,
     bool obscureText = false,
-    TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      enabled: !widget.controller.isAuthenticating,
       decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFFF6F8EF),
         hintText: hint,
-        prefixIcon: Icon(icon),
+        prefixIcon: Icon(icon, size: 20),
+        filled: true,
+        fillColor: bgColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
         ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16),
       ),
     );
   }

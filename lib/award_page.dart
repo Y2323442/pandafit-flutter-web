@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 class AwardPageScreen extends StatefulWidget {
   final VoidCallback refresh;
@@ -26,6 +27,9 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
 
   late List<Map<String, dynamic>> _dailyTasks;
   String? _lastCheckInDate;
+
+  VideoPlayerController? videoController;
+  bool showVideoPopup = false;
 
   bool _loading = true;
   late Map<String, dynamic> user;
@@ -147,6 +151,25 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     return 'assets/images/panda3.png';
   }
 
+  Future<void> _initVideo() async {
+    int level = user['level'] ?? 1;
+    String videoPath;
+
+    if (level < 15) {
+      videoPath = 'assets/videos/video_under15.mp4';
+    } else if (level < 30) {
+      videoPath = 'assets/videos/video_15to30.mp4';
+    } else {
+      videoPath = 'assets/videos/video_max30.mp4';
+    }
+
+    videoController = VideoPlayerController.asset(videoPath);
+    await videoController!.initialize();
+    videoController!.play();
+    videoController!.setLooping(true);
+    setState(() {});
+  }
+
   Future<void> _loadData() async {
     setState(() {
       user = {
@@ -167,6 +190,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     _frequencyController.dispose();
     _durationController.dispose();
     _pageController.dispose();
+    videoController?.dispose();
     super.dispose();
   }
 
@@ -178,26 +202,33 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: Stack(
         children: [
-          const Text(
-            'AWARD',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                const Text(
+                  'AWARD',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                _buildProgressCard(),
+                const SizedBox(height: 20),
+                _buildSportsBuddyCarousel(),
+                const SizedBox(height: 20),
+                _buildDailyTaskBar(),
+                const SizedBox(height: 20),
+                _buildFitnessStats(),
+                const SizedBox(height: 30),
+              ],
             ),
           ),
-          const SizedBox(height: 25),
-          _buildProgressCard(),
-          const SizedBox(height: 20),
-          _buildSportsBuddyCarousel(),
-          const SizedBox(height: 20),
-          _buildDailyTaskBar(),
-          const SizedBox(height: 20),
-          _buildFitnessStats(),
-          const SizedBox(height: 30),
+          if (showVideoPopup) _buildVideoPopupWidget(),
         ],
       ),
     );
@@ -491,37 +522,43 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
                   ),
                 ),
                 const SizedBox(width: 20),
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      const BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.asset(btnImage, fit: BoxFit.cover),
-                        const Center(
-                          child: Text(
-                            'Press me 🥰',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
-                            ),
-                          ),
+                GestureDetector(
+                  onTap: () async {
+                    await _initVideo();
+                    setState(() => showVideoPopup = true);
+                  },
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        const BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
                         ),
                       ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(btnImage, fit: BoxFit.cover),
+                          const Center(
+                            child: Text(
+                              'Press me 🥰',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                shadows: [Shadow(color: Colors.black45, blurRadius: 4)],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -530,6 +567,91 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildVideoPopupWidget() {
+    return Stack(
+      children: [
+        ModalBarrier(
+          color: Colors.black54,
+          dismissible: true,
+          onDismiss: () {
+            videoController?.pause();
+            setState(() => showVideoPopup = false);
+          },
+        ),
+        Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                width: 320,
+                height: 400,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white30),
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: videoController != null && videoController!.value.isInitialized
+                            ? AspectRatio(
+                          aspectRatio: videoController!.value.aspectRatio,
+                          child: VideoPlayer(videoController!),
+                        )
+                            : const CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                    Positioned(
+                      top: 20,
+                      left: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            const BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 8,
+                              offset: Offset(1, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          'Hello! 🥰',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Color(0xFF444444),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () {
+                          videoController?.pause();
+                          setState(() => showVideoPopup = false);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

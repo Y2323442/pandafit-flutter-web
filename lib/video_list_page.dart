@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'video_detail_page.dart';
 
-class VideoListPage extends StatelessWidget {
-  const VideoListPage({super.key});
+class VideoPage extends StatelessWidget {
+  const VideoPage({super.key});
 
   static const Color bgColor = Color(0xFFF1F8E9);
   static const Color mainGreen = Color(0xFFD1E683);
@@ -19,77 +18,174 @@ class VideoListPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Training Videos", 
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Workout Video",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
       ),
-      body: ListView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        children: [
-          // 传入不同的延迟，实现排队弹出的效果
-          _buildVideoItem(context, 0, "Fat Burning Cardio", "25 Min", "assets/images/running.jpg"),
-          _buildVideoItem(context, 1, "Abs Shredding", "15 Min", "assets/images/fire.jpg"),
-          _buildVideoItem(context, 2, "Full Body Stretch", "10 Min", "assets/images/basketball.jpg"),
-        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 视频区域
+            _animatedEntrance(
+              delay: 0,
+              child: Container(
+                height: 220,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(30),
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/running.jpg'),
+                    fit: BoxFit.cover,
+                    opacity: 0.6,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.play_circle_fill,
+                    color: mainGreen,
+                    size: 80,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 25),
+
+            // 视频信息
+            _animatedEntrance(
+              delay: 200,
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Morning Fat Burning",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "25 Minutes • High Intensity • 350 Kcal",
+                    style: TextStyle(
+                      color: Colors.black45,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // 训练步骤
+            _animatedEntrance(
+              delay: 400,
+              child: const Text(
+                "Workout Steps",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            _buildStepItem(1, "Dynamic Stretching", "3 Minutes", 400),
+            _buildStepItem(2, "High Intensity Interval", "15 Minutes", 500),
+            _buildStepItem(3, "Core Strengthening", "5 Minutes", 600),
+            _buildStepItem(4, "Cool Down & Stretch", "2 Minutes", 700),
+
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildVideoItem(BuildContext context, int index, String title, String time, String img) {
-    return FutureBuilder(
-      future: Future.delayed(Duration(milliseconds: index * 150)),
-      builder: (context, snapshot) {
-        bool isVisible = snapshot.connectionState == ConnectionState.done;
-        return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: isVisible ? 1.0 : 0.0),
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) {
-            return Opacity(
-              // 【核心修复】：强制限制透明度在 0 到 1 之间，防止崩溃
-              opacity: value.clamp(0.0, 1.0).toDouble(), 
-              child: Transform.translate(
-                offset: Offset(0, 40 * (1 - value)),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => VideoDetailPage(title: title, img: img))
-                    );
-                  },
-                  child: Container(
-                    height: 180,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(35),
-                      // 这里的背景图如果加载失败也会导致黑屏，请确保路径正确
-                      image: DecorationImage(
-                        image: AssetImage(img), 
-                        fit: BoxFit.cover, 
-                        opacity: 0.8
-                      ),
-                      color: Colors.black,
-                    ),
-                    child: Stack(
-                      children: [
-                        const Center(child: Icon(Icons.play_circle_fill, color: mainGreen, size: 60)),
-                        Positioned(
-                          bottom: 20, left: 25,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                              Text("$time • High Intensity", style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                            ],
-                          ),
-                        )
-                      ],
+  Widget _buildStepItem(int num, String title, String time, int delay) {
+    return _animatedEntrance(
+      delay: delay,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: mainGreen,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Text(
+                "$num",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                ),
+                  Text(
+                    time,
+                    style: const TextStyle(
+                      color: Colors.black38,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.check_circle_outline,
+              color: Colors.black12,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 🔥 升级为：支持 delay 延迟入场的动画（和你主页风格完全统一）
+  Widget _animatedEntrance({
+    required Widget child,
+    required int delay,
+  }) {
+    return FutureBuilder(
+      future: Future.delayed(Duration(milliseconds: delay)),
+      builder: (context, snapshot) {
+        final done = snapshot.connectionState == ConnectionState.done;
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: done ? 1.0 : 0.0),
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 30 * (1 - value)),
+                child: child,
               ),
             );
           },
+          child: child,
         );
       },
     );

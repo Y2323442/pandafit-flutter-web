@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
-import 'home_page_content.dart';
-import 'task_page.dart';
+
+import 'app_controller.dart';
+import 'auth_page.dart';
+import 'award_page.dart';
 import 'grow.dart';
+import 'home_page_content.dart';
 import 'me.dart';
+import 'task_page.dart';
 
 bool isChinese = false;
 
 void main() {
-  runApp(const TrainQuestRoot());
+  // 纯本地控制器，无API、无数据库
+  final controller = AppController();
+  runApp(TrainQuestRoot(controller: controller));
 }
 
 class TrainQuestRoot extends StatefulWidget {
-  const TrainQuestRoot({super.key});
+  const TrainQuestRoot({super.key, required this.controller});
+  final AppController controller;
 
   @override
   State<TrainQuestRoot> createState() => TrainQuestRootState();
@@ -19,91 +26,56 @@ class TrainQuestRoot extends StatefulWidget {
 
 class TrainQuestRootState extends State<TrainQuestRoot> {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Georgia'),
-      home: const AuthPageDemo(),
-    );
+  void initState() {
+    super.initState();
+    widget.controller.bootstrap();
   }
-}
 
-// 登录UI演示，点击即进主页，不验证
-class AuthPageDemo extends StatelessWidget {
-  const AuthPageDemo({super.key});
+  void refreshLang() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F8E9),
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (context, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(fontFamily: 'Georgia'),
+          home: _buildHome(),
+        );
+      },
+    );
+  }
+
+  Widget _buildHome() {
+    if (widget.controller.isBootstrapping) return const SplashPage();
+    if (!widget.controller.isAuthenticated) {
+      return AuthPage(controller: widget.controller);
+    }
+    return MainScreen(refresh: refreshLang);
+  }
+}
+
+class SplashPage extends StatelessWidget {
+  const SplashPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFFF1F8E9),
       body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircleAvatar(
-                radius: 40,
-                backgroundColor: Color(0xFF1A1C1E),
-                child: Icon(Icons.fitness_center, color: Color(0xFFD1E683), size: 32),
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                "Welcome Back",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 25),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Email",
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 15),
-              TextField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: "Password",
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 25),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (c) => const MainScreen()),
-                    );
-                  },
-                  child: const Text(
-                    "Log In",
-                    style: TextStyle(color: Color(0xFFD1E683), fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (c) => const MainScreen()),
-                  );
-                },
-                child: const Text("Create Account"),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 34,
+              backgroundColor: Color(0xFF1A1C1E),
+              child: Icon(Icons.fitness_center, color: Color(0xFFD1E683), size: 28),
+            ),
+            SizedBox(height: 18),
+            Text('Loading TrainQuest...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
         ),
       ),
     );
@@ -111,7 +83,8 @@ class AuthPageDemo extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  const MainScreen({super.key, required this.refresh});
+  final VoidCallback refresh;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -129,8 +102,12 @@ class _MainScreenState extends State<MainScreen> {
         onGoToAward: () => setState(() => _currentIndex = 2),
       ),
       const TaskPage(key: PageStorageKey('task')),
-      // 占位容器，不加载你的 AwardPage，不报错
-      Container(key: const PageStorageKey('award')),
+      AwardPageScreen(
+        key: const PageStorageKey('award'),
+        refresh: () {
+          setState(() {});
+        },
+      ),
       const GrowPage(key: PageStorageKey('grow')),
       const MePage(key: PageStorageKey('me')),
     ];
