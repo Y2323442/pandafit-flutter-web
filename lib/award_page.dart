@@ -48,7 +48,6 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
-  // 🔥 去掉了All daily tasks completed，XP调整为刚好满级
   void _initDailyTasks() {
     _dailyTasks = [
       {'text': 'Accumulate ≤ 0.5h', 'exp': 5, 'done': false},
@@ -111,16 +110,13 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     );
   }
 
-  // 🔥 累积时长判断，自动完成低档任务并加对应XP
   void _updateWorkoutTaskByHour(double h) {
-    // 先重置
     for (var t in _dailyTasks) {
       if (t['text'].contains('Accumulate')) {
         t['done'] = false;
       }
     }
 
-    // 逐级判定并加经验
     if (h > 0 && h < 0.5) {
       _dailyTasks[0]['done'] = true;
       _addXp(_dailyTasks[0]['exp']);
@@ -165,7 +161,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     );
     AppController.instance.updateUser(updated);
     setState(() {});
-    widget.refresh(); // 同步通知HomePage更新
+    widget.refresh();
   }
 
   String _getVideoButtonImage(int level) {
@@ -459,7 +455,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(30),
@@ -474,7 +470,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
@@ -690,9 +686,10 @@ class _RadarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.35;
+    final radius = size.width * 0.32;
     const sides = 5;
     final angleStep = 2 * pi / sides;
+    const baseAngle = -pi / 2 - 0.15;
 
     final normalized = List.generate(
       sides,
@@ -707,7 +704,7 @@ class _RadarPainter extends CustomPainter {
       final r = radius * i / 3;
       final path = Path();
       for (int j = 0; j < sides; j++) {
-        final a = angleStep * j - pi / 2;
+        final a = angleStep * j + baseAngle;
         final x = center.dx + r * cos(a);
         final y = center.dy + r * sin(a);
         j == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
@@ -720,7 +717,7 @@ class _RadarPainter extends CustomPainter {
       ..color = Colors.grey.shade400
       ..strokeWidth = 1;
     for (int i = 0; i < sides; i++) {
-      final a = angleStep * i - pi / 2;
+      final a = angleStep * i + baseAngle;
       canvas.drawLine(
         center,
         Offset(center.dx + radius * cos(a), center.dy + radius * sin(a)),
@@ -730,7 +727,7 @@ class _RadarPainter extends CustomPainter {
 
     final dataPath = Path();
     for (int i = 0; i < sides; i++) {
-      final a = angleStep * i - pi / 2;
+      final a = angleStep * i + baseAngle;
       final r = radius * normalized[i];
       final x = center.dx + r * cos(a);
       final y = center.dy + r * sin(a);
@@ -748,7 +745,7 @@ class _RadarPainter extends CustomPainter {
     );
 
     for (int i = 0; i < sides; i++) {
-      final a = angleStep * i - pi / 2;
+      final a = angleStep * i + baseAngle;
       final r = radius * normalized[i];
       canvas.drawCircle(
         Offset(center.dx + r * cos(a), center.dy + r * sin(a)),
@@ -758,20 +755,28 @@ class _RadarPainter extends CustomPainter {
     }
 
     for (int i = 0; i < sides; i++) {
-      final a = angleStep * i - pi / 2;
+      final a = angleStep * i + baseAngle;
+      double labelOutMargin = 46;
+      double extraDown = 0;
+      if (i == 0) {
+        extraDown = 14;
+      }
+
       final pos = Offset(
-        center.dx + (radius + 30) * cos(a),
-        center.dy + (radius + 30) * sin(a),
+        center.dx + (radius + labelOutMargin) * cos(a),
+        center.dy + (radius + labelOutMargin) * sin(a) + extraDown,
       );
+
       final tp = TextPainter(
         text: TextSpan(
           text: labels[i],
-          style: const TextStyle(fontSize: 12, color: Colors.black87),
+          style: const TextStyle(fontSize: 11, color: Colors.black87),
         ),
         textDirection: TextDirection.ltr,
       );
       tp.layout();
-      tp.paint(canvas, pos.translate(-tp.width / 2, -tp.height / 2));
+      double dx = -tp.width / 2;
+      tp.paint(canvas, pos.translate(dx, -tp.height / 2));
     }
   }
 
