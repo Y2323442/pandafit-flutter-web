@@ -1,0 +1,27 @@
+AI Development Prompt for PandaFit Flutter Application
+
+Project Overview:
+Develop a fully offline, mobile-first fitness and growth tracking application named PandaFit using the Flutter framework.
+The app must run natively on Android, iOS, and be compilable to Flutter Web for public deployment.
+No external backend or database server is required; all data is persisted locally on the device.
+
+Core Functional Requirements:
+1. Local user authentication including login, register, and logout with session persistence.
+2. Home dashboard displaying daily fitness progress, task overview, and user statistics.
+3. Daily task system with automatic completion detection, check-in mechanism, and XP reward calculation.
+4. Level and XP progression system with level cap control and experience point accumulation logic.
+5. Unlockable panda character assets that become available when reaching specific user levels.
+6. Custom radar chart visualization to present five-dimensional fitness statistics.
+7. Local image upload and storage for workout photos.
+8. Personal profile page showing user level, XP, activity streak, and editable fitness records.
+9. Settings module including notification options, language interface, account information, and about page.
+
+Technical Requirements:
+1. Use singleton pattern controller for global state management across all screens.
+2. Implement local data persistence using shared_preferences to store user profile, level, XP, tasks, check-in date, and fitness records.
+3. UI design must follow consistent color theme, rounded card layout, shadow effect, and unified spacing.
+4. Add entrance animation, button scale feedback, and smooth page navigation.
+5. Fully responsive mobile layout with no widget overflow, optimized for portrait mobile screen size.
+6. Clean code structure with separated models, screens, controllers, and asset resources.
+7. The entire project must be ready for Flutter Web build and deployment to Vercel or GitHub Pages.
+8. Ensure no critical runtime bugs, stable navigation, and complete interactive functions for demonstration.

@@ -27,9 +27,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  flutter_launcher_icons: ^0.14.4  # 最新稳定版
+  flutter_launcher_icons: ^0.14.4  
 
-# 图标配置（正确写法）
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true

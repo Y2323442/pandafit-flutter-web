@@ -2,6 +2,9 @@ import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'app_controller.dart';
+import 'local_report.dart';
+import 'models/trainquest_models.dart';
 
 class AwardPageScreen extends StatefulWidget {
   final VoidCallback refresh;
@@ -16,13 +19,13 @@ class AwardPageScreen extends StatefulWidget {
 
 class _AwardPageScreenState extends State<AwardPageScreen> {
   static const Color mainGreen = Color(0xFFD1E683);
-  static const int levelExp = 30;
-  static const int maxLevel = 30;
+  static const int levelExp = 10;
+  static const int maxLevel = 3;
 
   final List<Map<String, dynamic>> _buddyForms = [
     {'name': 'Baby Panda', 'asset': 'assets/images/panda1.png', 'unlockLevel': 1},
-    {'name': 'Advanced Panda', 'asset': 'assets/images/panda2.png', 'unlockLevel': 15},
-    {'name': 'Final Panda', 'asset': 'assets/images/panda3.png', 'unlockLevel': 30},
+    {'name': 'Advanced Panda', 'asset': 'assets/images/panda2.png', 'unlockLevel': 2},
+    {'name': 'Final Panda', 'asset': 'assets/images/panda3.png', 'unlockLevel': 3},
   ];
 
   late List<Map<String, dynamic>> _dailyTasks;
@@ -32,9 +35,9 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
   bool showVideoPopup = false;
 
   bool _loading = true;
-  late Map<String, dynamic> user;
-  final PageController _pageController = PageController();
+  AppUser? get user => AppController.instance.user;
 
+  final PageController _pageController = PageController();
   final TextEditingController _frequencyController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
 
@@ -45,17 +48,18 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
+  // 🔥 去掉了All daily tasks completed，XP调整为刚好满级
   void _initDailyTasks() {
     _dailyTasks = [
-      {'text': 'Workout < 1 hour', 'exp': 5, 'done': false},
-      {'text': 'Workout 1–5 hours', 'exp': 10, 'done': false},
-      {'text': 'Workout ≥ 5 hours', 'exp': 15, 'done': false},
-      {'text': 'All daily tasks completed', 'exp': 15, 'done': false},
-      {'text': 'Daily check-in', 'exp': 1, 'done': false},
+      {'text': 'Accumulate ≤ 0.5h', 'exp': 5, 'done': false},
+      {'text': 'Accumulate 0.5–2h', 'exp': 5, 'done': false},
+      {'text': 'Accumulate ≥ 2h', 'exp': 10, 'done': false},
+      {'text': 'Daily check-in', 'exp': 5, 'done': false},
     ];
   }
 
   Future<void> _doCheckIn() async {
+    if (user == null) return;
     final now = DateTime.now();
     final todayKey = "${now.year}-${now.month}-${now.day}";
 
@@ -72,19 +76,20 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
         if (t['text'] == 'Daily check-in') t['done'] = true;
       }
       _updateTaskCompletion();
-      _addXp(1);
+      _addXp(5);
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Check-in success! +1 EXP')),
+      const SnackBar(content: Text('Check-in success! +5 EXP')),
     );
   }
 
   void _saveFitnessData() {
+    if (user == null) return;
     final freq = int.tryParse(_frequencyController.text) ?? 0;
-    final dur = int.tryParse(_durationController.text) ?? 0;
+    final accumulateHours = double.tryParse(_durationController.text) ?? 0.0;
 
-    if (freq < 0 || dur < 0) {
+    if (freq < 0 || accumulateHours < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter valid numbers')),
       );
@@ -92,9 +97,12 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     }
 
     setState(() {
-      user['weeklyWorkoutCount'] = freq;
-      user['dailyWorkoutMinutes'] = dur;
-      _updateWorkoutTask(dur);
+      final updated = user!.copyWith(
+        weeklyWorkoutCount: freq,
+        dailyWorkoutMinutes: (accumulateHours * 60).round(),
+      );
+      AppController.instance.updateUser(updated);
+      _updateWorkoutTaskByHour(accumulateHours);
       _updateTaskCompletion();
     });
 
@@ -103,61 +111,77 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
     );
   }
 
-  void _updateWorkoutTask(int minutes) {
-    double hours = minutes / 60;
+  // 🔥 累积时长判断，自动完成低档任务并加对应XP
+  void _updateWorkoutTaskByHour(double h) {
+    // 先重置
     for (var t in _dailyTasks) {
-      switch (t['text']) {
-        case 'Workout < 1 hour':
-          t['done'] = hours > 0 && hours < 1;
-          break;
-        case 'Workout 1–5 hours':
-          t['done'] = hours >= 1 && hours <= 5;
-          break;
-        case 'Workout ≥ 5 hours':
-          t['done'] = hours >= 5;
-          break;
+      if (t['text'].contains('Accumulate')) {
+        t['done'] = false;
       }
+    }
+
+    // 逐级判定并加经验
+    if (h > 0 && h < 0.5) {
+      _dailyTasks[0]['done'] = true;
+      _addXp(_dailyTasks[0]['exp']);
+    } else if (h >= 0.5 && h < 2) {
+      _dailyTasks[0]['done'] = true;
+      _dailyTasks[1]['done'] = true;
+      _addXp(_dailyTasks[0]['exp']);
+      _addXp(_dailyTasks[1]['exp']);
+    } else if (h >= 2) {
+      _dailyTasks[0]['done'] = true;
+      _dailyTasks[1]['done'] = true;
+      _dailyTasks[2]['done'] = true;
+      _addXp(_dailyTasks[0]['exp']);
+      _addXp(_dailyTasks[1]['exp']);
+      _addXp(_dailyTasks[2]['exp']);
     }
   }
 
   void _updateTaskCompletion() {
+    if (user == null) return;
     int total = _dailyTasks.length;
     int done = _dailyTasks.where((t) => t['done'] == true).length;
-    user['taskCompletionRate'] = done / total;
+    double rate = done / total;
 
-    bool allDone = done == total;
-    for (var t in _dailyTasks) {
-      if (t['text'] == 'All daily tasks completed') {
-        t['done'] = allDone;
-        if (allDone) _addXp(15);
-      }
-    }
+    final updated = user!.copyWith(taskCompletionRate: rate);
+    AppController.instance.updateUser(updated);
   }
 
   void _addXp(int exp) {
-    setState(() {
-      user['xp'] += exp;
-      while (user['xp'] >= user['level'] * levelExp && user['level'] < maxLevel) {
-        user['xp'] -= user['level'] * levelExp;
-        user['level']++;
-      }
-    });
-    widget.refresh();
+    if (user == null) return;
+    int newXp = user!.xp + exp;
+    int newLevel = user!.level;
+
+    while (newXp >= levelExp && newLevel < maxLevel) {
+      newXp -= levelExp;
+      newLevel++;
+    }
+
+    final updated = user!.copyWith(
+      xp: newXp,
+      level: newLevel,
+    );
+    AppController.instance.updateUser(updated);
+    setState(() {});
+    widget.refresh(); // 同步通知HomePage更新
   }
 
   String _getVideoButtonImage(int level) {
-    if (level < 15) return 'assets/images/panda1.png';
-    if (level < 30) return 'assets/images/panda2.png';
+    if (level == 1) return 'assets/images/panda1.png';
+    if (level == 2) return 'assets/images/panda2.png';
     return 'assets/images/panda3.png';
   }
 
   Future<void> _initVideo() async {
-    int level = user['level'] ?? 1;
+    if (user == null) return;
+    int level = user!.level;
     String videoPath;
 
-    if (level < 15) {
+    if (level == 1) {
       videoPath = 'assets/videos/video_under15.mp4';
-    } else if (level < 30) {
+    } else if (level == 2) {
       videoPath = 'assets/videos/video_15to30.mp4';
     } else {
       videoPath = 'assets/videos/video_max30.mp4';
@@ -171,16 +195,12 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
   }
 
   Future<void> _loadData() async {
+    if (user == null) return;
     setState(() {
-      user = {
-        "level": 1,
-        "xp": 0,
-        "weeklyWorkoutCount": 2,
-        "dailyWorkoutMinutes": 30,
-        "taskCompletionRate": 0.0
-      };
-      _frequencyController.text = user['weeklyWorkoutCount'].toString();
-      _durationController.text = user['dailyWorkoutMinutes'].toString();
+      _frequencyController.text = user!.weeklyWorkoutCount.toString();
+      _durationController.text = (user!.dailyWorkoutMinutes / 60).toStringAsFixed(1);
+      _updateWorkoutTaskByHour(user!.dailyWorkoutMinutes / 60);
+      _updateTaskCompletion();
       _loading = false;
     });
   }
@@ -196,7 +216,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    if (_loading || user == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -235,9 +255,9 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
   }
 
   Widget _buildProgressCard() {
-    int level = user['level'] ?? 1;
-    int currentXp = user['xp'] ?? 0;
-    int maxXp = level * levelExp;
+    int level = user!.level;
+    int currentXp = user!.xp;
+    int maxXp = levelExp;
 
     return Container(
       padding: const EdgeInsets.all(25),
@@ -262,7 +282,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
               ),
               const Spacer(),
               Text(
-                '$currentXp / $maxXp XP',
+                level == maxLevel ? 'MAX' : '$currentXp / $maxXp EXP',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -271,7 +291,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: currentXp / maxXp,
+              value: level == maxLevel ? 1.0 : (currentXp / maxXp).clamp(0.0, 1.0),
               backgroundColor: Colors.white.withOpacity(0.3),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
               minHeight: 8,
@@ -283,7 +303,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
   }
 
   Widget _buildSportsBuddyCarousel() {
-    int userLevel = user['level'] ?? 1;
+    int userLevel = user!.level;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -384,7 +404,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
           Row(
             children: [
               const Text(
-                'Daily Task Bar',
+                'Task Bar',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
@@ -427,15 +447,13 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
 
   Widget _buildFitnessStats() {
     final labels = ['Frequency', 'Duration', 'Vitality', 'Completion', 'Growth'];
-    int level = user['level'] ?? 1;
-    String btnImage = _getVideoButtonImage(level);
 
     List<double> radarValues = [
-      user['weeklyWorkoutCount'].toDouble(),
-      user['dailyWorkoutMinutes'].toDouble(),
-      user['level'].toDouble(),
-      user['taskCompletionRate'] * 100,
-      user['level'].toDouble(),
+      user!.weeklyWorkoutCount.toDouble(),
+      (user!.dailyWorkoutMinutes / 60),
+      user!.level.toDouble(),
+      user!.taskCompletionRate * 100,
+      user!.level.toDouble(),
     ];
 
     return GestureDetector(
@@ -480,10 +498,10 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
                   Expanded(
                     child: TextField(
                       controller: _durationController,
-                      keyboardType: TextInputType.number,
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
                       textAlign: TextAlign.center,
                       decoration: const InputDecoration(
-                        labelText: 'Duration(min)',
+                        labelText: 'Accumulate Hour',
                         border: OutlineInputBorder(),
                       ),
                       onSubmitted: (value) {
@@ -515,7 +533,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
                       painter: _RadarPainter(
                         values: radarValues,
                         labels: labels,
-                        maxValues: const [7, 120, 30, 100, 30],
+                        maxValues: const [7, 5, 3, 100, 3],
                         color: mainGreen,
                       ),
                     ),
@@ -545,7 +563,7 @@ class _AwardPageScreenState extends State<AwardPageScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.asset(btnImage, fit: BoxFit.cover),
+                          Image.asset(_getVideoButtonImage(user!.level), fit: BoxFit.cover),
                           const Center(
                             child: Text(
                               'Press me 🥰',

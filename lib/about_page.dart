@@ -45,25 +45,12 @@ class _AboutUsPageState extends State<AboutUsPage> {
             ),
             const SizedBox(height: 30),
 
-            // 3. 成就/里程碑 (横向滑动)
+            // 3. 成就/里程碑
             _animatedEntrance(
               delay: 400,
               child: _buildMilestones(),
             ),
-            const SizedBox(height: 30),
 
-            // 4. 链接列表
-            _animatedEntrance(
-              delay: 600,
-              child: Column(
-                children: [
-                  _buildLinkTile("Official Website", "www.fitgrow.app"),
-                  _buildLinkTile("Terms of Service", "Legal documents"),
-                  _buildLinkTile("Privacy Policy", "How we use data"),
-                ],
-              ),
-            ),
-            
             const SizedBox(height: 50),
             const Text("Made with ❤️ for a better life", style: TextStyle(color: Colors.black26, fontSize: 12)),
             const SizedBox(height: 40),
@@ -73,7 +60,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
     );
   }
 
-  // --- 高级组件：带呼吸效果的 Logo ---
+  // --- 带呼吸效果的 Logo ---
   Widget _buildAnimatedLogo() {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.95, end: 1.05),
@@ -87,17 +74,17 @@ class _AboutUsPageState extends State<AboutUsPage> {
             decoration: BoxDecoration(
               color: darkCard,
               borderRadius: BorderRadius.circular(30),
-              boxShadow: [BoxShadow(color: mainGreen.withValues(alpha: 0.2), blurRadius: 20)],
+              boxShadow: [BoxShadow(color: mainGreen.withOpacity(0.2), blurRadius: 20)],
             ),
             child: const Icon(Icons.bolt, color: mainGreen, size: 50),
           ),
         );
       },
-      onEnd: () {}, // 这里可以循环动画，但 TweenAnimationBuilder 默认不循环，可以通过状态机实现更复杂的
+      onEnd: () {},
     );
   }
 
-  // --- 高级组件：品牌故事卡片 ---
+  // --- 品牌故事卡片 ---
   Widget _buildStoryCard() {
     return Container(
       width: double.infinity,
@@ -125,20 +112,14 @@ class _AboutUsPageState extends State<AboutUsPage> {
     );
   }
 
-  // --- 安全适配版：横向滚动里程碑 ---
-  // --- 高级组件：横向滚动里程碑 ---
-  // --- 自动换行的响应式里程碑布局 ---
+  // --- 里程碑（已按你的要求修改）---
   Widget _buildMilestones() {
     final milestones = [
-      {"year": "2022", "event": "Project Started"},
-      {"year": "2023", "event": "1M Users Reached"},
-      {"year": "2024", "event": "Best App Award"},
-      {"year": "2025", "event": "Global Expansion"},
+      {"year": "2026.03", "event": "Project Started"},
+      {"year": "2026.05", "event": "Project Completed"},
     ];
 
-    // 获取屏幕宽度，用于计算卡片宽度，确保每行排两个
     double screenWidth = MediaQuery.of(context).size.width;
-    // 减去页面两侧的 Padding (20*2) 和 卡片中间的间距 (15)，然后除以 2
     double itemWidth = (screenWidth - 40 - 15) / 2;
 
     return Column(
@@ -148,22 +129,21 @@ class _AboutUsPageState extends State<AboutUsPage> {
           padding: EdgeInsets.only(left: 10, bottom: 15),
           child: Text("Milestones", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ),
-        // 使用 Wrap 组件实现自动换行
         Wrap(
-          spacing: 15,    // 两个卡片之间的横向间距
-          runSpacing: 15, // 换行后的纵向间距
+          spacing: 15,
+          runSpacing: 15,
           children: milestones.map((item) {
             return _ScaleTap(
               onTap: () {},
               child: Container(
-                width: itemWidth, // 动态计算宽度，完美适配不同手机屏幕
+                width: itemWidth,
                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
                 decoration: BoxDecoration(
                   color: mainGreen,
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: mainGreen.withValues(alpha: 0.1),
+                      color: mainGreen.withOpacity(0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -197,44 +177,17 @@ class _AboutUsPageState extends State<AboutUsPage> {
     );
   }
 
-  // --- 高级组件：链接条目 ---
-  Widget _buildLinkTile(String title, String sub) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: _ScaleTap(
-        onTap: () {},
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text(sub, style: const TextStyle(color: Colors.black26, fontSize: 12)),
-                ],
-              ),
-              const Spacer(),
-              const Icon(Icons.open_in_new, size: 18, color: Colors.black12),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   // --- 辅助方法 ---
   Widget _buildIconButton(IconData icon, VoidCallback onTap) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: _ScaleTap(onTap: onTap, child: Container(
-        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-        child: Icon(icon, color: Colors.black, size: 20),
-      )),
+      child: _ScaleTap(
+        onTap: onTap,
+        child: Container(
+          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+          child: Icon(icon, color: Colors.black, size: 20),
+        ),
+      ),
     );
   }
 
@@ -247,7 +200,11 @@ class _AboutUsPageState extends State<AboutUsPage> {
           scale: isDone ? 1.0 : 0.9,
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeOutBack,
-          child: AnimatedOpacity(opacity: isDone ? 1.0 : 0.0, duration: const Duration(milliseconds: 600), child: child),
+          child: AnimatedOpacity(
+            opacity: isDone ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 600),
+            child: child,
+          ),
         );
       },
     );
@@ -259,6 +216,7 @@ class _ScaleTap extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
   const _ScaleTap({required this.child, required this.onTap});
+
   @override
   State<_ScaleTap> createState() => _ScaleTapState();
 }
@@ -272,7 +230,11 @@ class _ScaleTapState extends State<_ScaleTap> {
       onTapUp: (_) => setState(() => _scale = 1.0),
       onTapCancel: () => setState(() => _scale = 1.0),
       onTap: widget.onTap,
-      child: AnimatedScale(scale: _scale, duration: const Duration(milliseconds: 100), child: widget.child),
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 100),
+        child: widget.child,
+      ),
     );
   }
 }

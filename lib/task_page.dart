@@ -1,23 +1,6 @@
 import 'package:flutter/material.dart';
-
-// 本地数据模型
-class AppTask {
-  final String id;
-  final String title;
-  final String description;
-  final String timeSlot;
-  final String status;
-  final String category;
-
-  AppTask({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.timeSlot,
-    required this.status,
-    required this.category,
-  });
-}
+import 'app_controller.dart';
+import 'models/trainquest_models.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -35,8 +18,15 @@ class _TaskPageState extends State<TaskPage> {
   bool _loading = true;
   String? _error;
 
-  List<AppTask> _dailyTasks = <AppTask>[];
-  List<AppTask> _projects = <AppTask>[];
+  // 🔥 核心：这里会自动返回【按时间排序好】的任务
+  List<AppTask> get _dailyTasks {
+    final tasks = AppController.instance.tasks.where((t) => t.category == 'daily').toList();
+    _sortTasksByTime(tasks); // 自动排序
+    return tasks;
+  }
+
+  List<AppTask> get _projects =>
+      AppController.instance.tasks.where((t) => t.category == 'project').toList();
 
   @override
   void initState() {
@@ -46,15 +36,26 @@ class _TaskPageState extends State<TaskPage> {
     });
   }
 
-  // 统一排序方法：按时间从小到大
-  void _sortDailyTasksByTime() {
-    _dailyTasks.sort((a, b) {
-      final t1 = _parseTimeOfDay(a.timeSlot);
-      final t2 = _parseTimeOfDay(b.timeSlot);
-      final time1 = t1.hour * 60 + t1.minute;
-      final time2 = t2.hour * 60 + t2.minute;
+  // 🔥 任务时间排序方法（正确稳定版）
+  void _sortTasksByTime(List<AppTask> tasks) {
+    tasks.sort((a, b) {
+      final time1 = _getTimeMinutes(a.timeSlot);
+      final time2 = _getTimeMinutes(b.timeSlot);
       return time1.compareTo(time2);
     });
+  }
+
+  // 把时间字符串转为分钟数（用于排序）
+  int _getTimeMinutes(String timeStr) {
+    try {
+      final match = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(timeStr.trim());
+      if (match == null) return 9999;
+      final h = int.parse(match.group(1)!);
+      final m = int.parse(match.group(2)!);
+      return h * 60 + m;
+    } catch (_) {
+      return 9999;
+    }
   }
 
   Future<void> _loadData({bool showLoader = true}) async {
@@ -64,56 +65,17 @@ class _TaskPageState extends State<TaskPage> {
         _error = null;
       });
     }
-
     try {
       await Future.delayed(const Duration(milliseconds: 200));
-
-      final defaultDaily = [
-        AppTask(
-          id: "1",
-          title: "Morning Run",
-          description: "",
-          timeSlot: "07:00",
-          status: "active",
-          category: "daily",
-        ),
-        AppTask(
-          id: "2",
-          title: "10min Stretch",
-          description: "",
-          timeSlot: "12:00",
-          status: "completed",
-          category: "daily",
-        ),
-      ];
-
-      final defaultProjects = [
-        AppTask(
-          id: "10",
-          title: "Fitness Plan",
-          description: "Weekly workout schedule",
-          timeSlot: "",
-          status: "active",
-          category: "project",
-        ),
-      ];
-
-      _dailyTasks = defaultDaily;
-      _projects = defaultProjects;
-      _sortDailyTasksByTime();
-
-      if (!mounted) return;
       setState(() => _loading = false);
-    } catch (error) {
-      if (!mounted) return;
+    } catch (e) {
       setState(() {
-        _error = error.toString();
+        _error = e.toString();
         _loading = false;
       });
     }
   }
 
-  // 时间解析 24小时制 纯净解析
   TimeOfDay _parseTimeOfDay(String timeStr) {
     try {
       final match = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(timeStr.trim());
@@ -126,7 +88,6 @@ class _TaskPageState extends State<TaskPage> {
     }
   }
 
-  // 格式化 24小时制 时钟样式
   String _format24Time(TimeOfDay time) {
     String h = time.hour.toString().padLeft(2, '0');
     String m = time.minute.toString().padLeft(2, '0');
@@ -163,7 +124,6 @@ class _TaskPageState extends State<TaskPage> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.black12),
                     ),
-
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.black12),
@@ -178,7 +138,6 @@ class _TaskPageState extends State<TaskPage> {
                       final picked = await showTimePicker(
                         context: context,
                         initialTime: selectedTime ?? TimeOfDay.now(),
-                        // 🔹优化1：全局24小时制时钟
                         builder: (context, child) {
                           return Theme(
                             data: Theme.of(context).copyWith(
@@ -242,29 +201,14 @@ class _TaskPageState extends State<TaskPage> {
                 onPressed: () async {
                   final title = titleController.text.trim();
                   if (title.isEmpty) return;
-
                   final timeStr = selectedTime != null ? _format24Time(selectedTime!) : '';
-                  final newTask = AppTask(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
-                    title: title,
-                    description: '',
-                    timeSlot: timeStr,
-                    status: 'active',
-                    category: _selectedTab == 0 ? 'daily' : 'project',
-                  );
 
-                  setState(() {
-                    if (_selectedTab == 0) {
-                      _dailyTasks.add(newTask);
-                      // 🔹优化2：新增任务自动重新按时间排序
-                      _sortDailyTasksByTime();
-                    } else {
-                      _projects.add(newTask);
-                    }
-                  });
+                  final cat = _selectedTab == 0 ? 'daily' : 'project';
+                  await AppController.instance.addNewTask(title, timeStr, category: cat);
 
                   if (!mounted) return;
                   Navigator.pop(context);
+                  setState(() {});
                 },
                 child: const Text(
                   'Add',
@@ -279,43 +223,13 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   Future<void> _toggleComplete(AppTask task) async {
-    setState(() {
-      if (task.category == 'daily') {
-        _dailyTasks = _dailyTasks.map((t) {
-          if (t.id == task.id) {
-            return AppTask(
-              id: t.id,
-              title: t.title,
-              description: t.description,
-              timeSlot: t.timeSlot,
-              status: t.status == 'completed' ? 'active' : 'completed',
-              category: t.category,
-            );
-          }
-          return t;
-        }).toList();
-        _sortDailyTasksByTime();
-      } else {
-        _projects = _projects.map((t) {
-          if (t.id == task.id) {
-            return AppTask(
-              id: t.id,
-              title: t.title,
-              description: t.description,
-              timeSlot: t.timeSlot,
-              status: t.status == 'completed' ? 'active' : 'completed',
-              category: t.category,
-            );
-          }
-          return t;
-        }).toList();
-      }
-    });
+    await AppController.instance.toggleTask(task);
+    setState(() {});
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          task.status == 'completed' ? 'Completed canceled' : 'Marked as completed',
+          task.isCompleted ? 'Completed canceled' : 'Marked as completed',
         ),
         backgroundColor: Colors.black,
       ),
@@ -345,15 +259,8 @@ class _TaskPageState extends State<TaskPage> {
         false;
 
     if (!confirm) return;
-
-    setState(() {
-      if (task.category == 'daily') {
-        _dailyTasks.removeWhere((t) => t.id == task.id);
-        _sortDailyTasksByTime();
-      } else {
-        _projects.removeWhere((t) => t.id == task.id);
-      }
-    });
+    await AppController.instance.deleteTask(task);
+    setState(() {});
   }
 
   @override
@@ -483,7 +390,7 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   Widget _buildDailyItem(AppTask task) {
-    final done = task.status == 'completed';
+    final done = task.isCompleted;
     return IntrinsicHeight(
       child: Row(
         children: [
@@ -565,7 +472,7 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   Widget _buildProjectCard(AppTask task) {
-    final done = task.status == 'completed';
+    final done = task.isCompleted;
     final progress = done ? 1.0 : 0.35;
 
     return _ScaleTap(

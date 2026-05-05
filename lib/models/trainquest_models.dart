@@ -7,7 +7,6 @@ class AppUser {
     required this.xp,
     required this.streakDays,
     required this.totalSignInDays,
-    // 新增五边形数据字段
     required this.weeklyWorkoutCount,
     required this.dailyWorkoutMinutes,
     required this.taskCompletionRate,
@@ -25,12 +24,10 @@ class AppUser {
   final DateTime? createdAt;
   final List<String>? signInDates;
 
-  // 五边形核心字段
   final int weeklyWorkoutCount;
   final int dailyWorkoutMinutes;
   final double taskCompletionRate;
 
-  // 👇 修复：解析后端返回的新字段
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: _asInt(json['id']),
@@ -48,7 +45,6 @@ class AppUser {
     );
   }
 
-  // 👇 修复：序列化新增字段
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,
@@ -56,16 +52,16 @@ class AppUser {
       'email': email,
       'level': level,
       'xp': xp,
-      'streak_days': streakDays,
-      'total_sign_in_days': totalSignInDays,
+      'streakDays': streakDays,
+      'totalSignInDays': totalSignInDays,
       'weeklyWorkoutCount': weeklyWorkoutCount,
       'dailyWorkoutMinutes': dailyWorkoutMinutes,
       'taskCompletionRate': taskCompletionRate,
       'created_at': createdAt?.toIso8601String(),
+      'sign_in_dates': signInDates,
     };
   }
 
-  // 👇 修复：copyWith 包含新字段
   AppUser copyWith({
     int? id,
     String? username,
@@ -97,9 +93,6 @@ class AppUser {
   }
 }
 
-// ======================
-// 以下代码保持不变
-// ======================
 class AppTask {
   const AppTask({
     required this.id,
@@ -143,6 +136,23 @@ class AppTask {
       completedAt: DateTime.tryParse(json['completed_at']?.toString() ?? ''),
       order: _asInt(json['order']),
     );
+  }
+
+  // ✅ 已修复：补上 toJson()
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'title': title,
+      'description': description,
+      'category': category,
+      'status': status,
+      'difficulty': difficulty,
+      'time_slot': timeSlot,
+      'created_at': createdAt?.toIso8601String(),
+      'completed_at': completedAt?.toIso8601String(),
+      'order': order,
+    };
   }
 }
 
@@ -235,6 +245,19 @@ class ProgressRecordModel {
       signedIn: json['signed_in'] == true,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'record_date': recordDate?.toIso8601String(),
+      'steps': steps,
+      'workout_minutes': workoutMinutes,
+      'calories': calories,
+      'distance_km': distanceKm,
+      'signed_in': signedIn,
+    };
+  }
 }
 
 class WorkoutPhotoModel {
@@ -292,6 +315,17 @@ class BadgeModel {
       badgeType: badge['badge_type']?.toString() ?? 'streak',
       earnedAt: DateTime.tryParse(json['earned_at']?.toString() ?? ''),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'threshold': threshold,
+      'badge_type': badgeType,
+      'earned_at': earnedAt?.toIso8601String(),
+    };
   }
 }
 

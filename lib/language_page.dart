@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main.dart'; // 👈 引入 main 才能用全局 isChinese
+import 'main.dart'; // 导入全局 key
 
 class LanguagePage extends StatelessWidget {
   const LanguagePage({super.key});
@@ -56,6 +56,8 @@ class LanguagePage extends StatelessWidget {
                   isSelected: isChinese,
                   onTap: () {
                     isChinese = true;
+                    // 👇 用全局 key 刷新，不爆红
+                    trainQuestRootKey.currentState?.refreshLang();
                     Navigator.pop(context);
                   },
                 ),
@@ -70,6 +72,8 @@ class LanguagePage extends StatelessWidget {
                   isSelected: !isChinese,
                   onTap: () {
                     isChinese = false;
+                    // 👇 用全局 key 刷新，不爆红
+                    trainQuestRootKey.currentState?.refreshLang();
                     Navigator.pop(context);
                   },
                 ),

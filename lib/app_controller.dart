@@ -1,128 +1,97 @@
 import 'package:flutter/foundation.dart';
 import 'models/trainquest_models.dart';
+import 'local_report.dart';
 
 class AppController extends ChangeNotifier {
+  static final AppController instance = AppController();
   AppController();
 
   bool _bootstrapping = false;
-  bool _authenticating = false;
-  String? _token;
   AppUser? _user;
-  String? _authError;
+  List<AppTask> _tasks = [];
 
+  List<AppTask> get tasks => _tasks;
   bool get isBootstrapping => _bootstrapping;
-  bool get isAuthenticating => _authenticating;
-  bool get isAuthenticated => _token != null && _user != null;
-  String get token => _token ?? '';
+  bool get isAuthenticated => true;
   AppUser? get user => _user;
-  String? get authError => _authError;
 
   Future<void> bootstrap() async {
+    _bootstrapping = true;
+    notifyListeners();
+
+    _tasks = LocalReport.loadTasks();
+
+    _user = const AppUser(
+      id: 1,
+      username: "User",
+      email: "User@pandafit.com",
+      level: 1,
+      xp: 0,
+      streakDays: 0,
+      totalSignInDays: 0,
+      weeklyWorkoutCount: 0,
+      dailyWorkoutMinutes: 0,
+      taskCompletionRate: 0.0,
+      createdAt: null,
+      signInDates: [],
+    );
+
     _bootstrapping = false;
     notifyListeners();
   }
 
-  // 纯本地模拟登录
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
-    _authenticating = true;
-    _authError = null;
-    notifyListeners();
+  Future<void> toggleTask(AppTask task) async {
+    final newStatus = task.isCompleted ? "pending" : "completed";
 
-    try {
-      await Future.delayed(const Duration(milliseconds: 600));
+    final updated = AppTask(
+      id: task.id,
+      userId: task.userId,
+      title: task.title,
+      description: task.description,
+      category: task.category,
+      status: newStatus,
+      difficulty: task.difficulty,
+      timeSlot: task.timeSlot,
+      createdAt: task.createdAt,
+      completedAt: newStatus == "completed" ? DateTime.now() : null,
+      order: task.order,
+    );
 
-      // ✅ 完全匹配你的 AppUser 构造函数
-      _token = "local_demo_token";
-      _user = AppUser(
-        id: 1,
-        username: email.split('@').first,
-        email: email,
-        level: 1,
-        xp: 0,
-        streakDays: 0,
-        totalSignInDays: 0,
-        weeklyWorkoutCount: 0,
-        dailyWorkoutMinutes: 0,
-        taskCompletionRate: 0.0,
-        createdAt: DateTime.now(),
-        signInDates: [],
-      );
-    } catch (error) {
-      _authError = error.toString();
-    } finally {
-      _authenticating = false;
-      notifyListeners();
-    }
-  }
-
-  // 纯本地模拟注册
-  Future<void> register({
-    required String username,
-    required String email,
-    required String password,
-  }) async {
-    _authenticating = true;
-    _authError = null;
-    notifyListeners();
-
-    try {
-      await Future.delayed(const Duration(milliseconds: 600));
-
-      // ✅ 完全匹配你的 AppUser
-      _token = "local_demo_token";
-      _user = AppUser(
-        id: 1,
-        username: username,
-        email: email,
-        level: 1,
-        xp: 0,
-        streakDays: 0,
-        totalSignInDays: 0,
-        weeklyWorkoutCount: 0,
-        dailyWorkoutMinutes: 0,
-        taskCompletionRate: 0.0,
-        createdAt: DateTime.now(),
-        signInDates: [],
-      );
-    } catch (error) {
-      _authError = error.toString();
-    } finally {
-      _authenticating = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> logout() async {
-    _token = null;
-    _user = null;
-    _authError = null;
+    await LocalReport.updateTask(updated);
+    _tasks = LocalReport.loadTasks();
     notifyListeners();
   }
 
-  Future<void> updateUser(AppUser user) async {
-    _user = user;
+  Future<void> addNewTask(String title, String timeSlot, {String category = "daily"}) async {
+    final newTask = AppTask(
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      userId: user?.id ?? 1,
+      title: title,
+      description: "",
+      category: category,
+      status: "pending",
+      difficulty: "easy",
+      timeSlot: timeSlot,
+      createdAt: DateTime.now(),
+      completedAt: null,
+      order: tasks.length,
+    );
+
+    await LocalReport.addTask(newTask);
+    _tasks = LocalReport.loadTasks();
     notifyListeners();
   }
 
-  Future<void> clearAuthError() async {
-    _authError = null;
+  Future<void> deleteTask(AppTask task) async {
+    await LocalReport.deleteTask(task.id);
+    _tasks = LocalReport.loadTasks();
     notifyListeners();
   }
 
-  Future<bool> autoSignInToday() async {
-    return false;
-  }
-
-  // ✅ 你的签到逻辑完全不变
   Future<void> userSignIn() async {
     if (_user == null) return;
-
     final now = DateTime.now();
     final today = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
     final currentDates = _user!.signInDates ?? [];
     if (currentDates.contains(today)) return;
 
@@ -131,6 +100,14 @@ class AppController extends ChangeNotifier {
       totalSignInDays: currentDates.length + 1,
     );
 
-    await updateUser(updatedUser);
+    _user = updatedUser;
+    notifyListeners();
+    await LocalReport.saveUser(_user!);
+  }
+
+  Future<void> updateUser(AppUser user) async {
+    _user = user;
+    notifyListeners();
+    await LocalReport.saveUser(user);
   }
 }

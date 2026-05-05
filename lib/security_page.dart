@@ -29,7 +29,7 @@ class _SecurityPageState extends State<SecurityPage> {
           children: [
             const SizedBox(height: 20),
             
-            // 1. 高级感：安全评分仪表盘
+            // 1. 安全评分仪表盘
             _animatedEntrance(delay: 0, child: _buildSecurityDashboard()),
             const SizedBox(height: 30),
 
@@ -41,25 +41,6 @@ class _SecurityPageState extends State<SecurityPage> {
                 Expanded(child: _animatedEntrance(delay: 300, child: _buildBigActionCard("2FA Auth", "Enabled", Icons.verified_user_outlined, mainGreen))),
               ],
             ),
-            const SizedBox(height: 25),
-
-            // 3. 详细设置列表（悬浮感卡片）
-            _animatedEntrance(
-              delay: 400,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 10, bottom: 15),
-                    child: Text("Verification Methods", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ),
-                  _buildModernTile(Icons.phone_iphone, "Phone Number", "+86 138****8888"),
-                  _buildModernTile(Icons.alternate_email, "Email Address", "alex.j***@gmail.com"),
-                  _buildModernTile(Icons.devices, "Device Management", "3 Active Devices"),
-                ],
-              ),
-            ),
-            
             const SizedBox(height: 40),
           ],
         ),
@@ -75,7 +56,7 @@ class _SecurityPageState extends State<SecurityPage> {
       decoration: BoxDecoration(
         color: darkCard,
         borderRadius: BorderRadius.circular(45),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Column(
         children: [
@@ -121,14 +102,14 @@ class _SecurityPageState extends State<SecurityPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(35),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15)],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: accentColor.withOpacity(0.1), shape: BoxShape.circle),
               child: Icon(icon, color: accentColor, size: 24),
             ),
             const SizedBox(height: 15),
@@ -136,40 +117,6 @@ class _SecurityPageState extends State<SecurityPage> {
             const SizedBox(height: 4),
             Text(status, style: TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.w600)),
           ],
-        ),
-      ),
-    );
-  }
-
-  // --- 高级组件：现代条目卡片 ---
-  Widget _buildModernTile(IconData icon, String title, String subtitle) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: _ScaleTap(
-        onTap: () {},
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.black54),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(subtitle, style: const TextStyle(color: Colors.black38, fontSize: 12)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black12),
-            ],
-          ),
         ),
       ),
     );

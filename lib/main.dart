@@ -1,34 +1,54 @@
 import 'package:flutter/material.dart';
-
 import 'app_controller.dart';
-import 'auth_page.dart';
 import 'award_page.dart';
 import 'grow.dart';
 import 'home_page_content.dart';
 import 'me.dart';
 import 'task_page.dart';
+import 'local_report.dart';
 
 bool isChinese = false;
 
-void main() {
-  // 纯本地控制器，无API、无数据库
-  final controller = AppController();
-  runApp(TrainQuestRoot(controller: controller));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await LocalReport.init();
+  runApp(const MyApp());
+}
+
+// 全局刷新用的key（重点）
+GlobalKey<_TrainQuestRootState> trainQuestRootKey = GlobalKey();
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'Georgia'),
+      home: TrainQuestRoot(key: trainQuestRootKey),
+    );
+  }
 }
 
 class TrainQuestRoot extends StatefulWidget {
-  const TrainQuestRoot({super.key, required this.controller});
-  final AppController controller;
+  const TrainQuestRoot({super.key});
 
   @override
-  State<TrainQuestRoot> createState() => TrainQuestRootState();
+  State<TrainQuestRoot> createState() => _TrainQuestRootState();
 }
 
-class TrainQuestRootState extends State<TrainQuestRoot> {
+class _TrainQuestRootState extends State<TrainQuestRoot> {
+  final AppController controller = AppController.instance;
+
   @override
   void initState() {
     super.initState();
-    widget.controller.bootstrap();
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    await controller.bootstrap();
   }
 
   void refreshLang() {
@@ -38,50 +58,15 @@ class TrainQuestRootState extends State<TrainQuestRoot> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.controller,
+      animation: controller,
       builder: (context, _) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(fontFamily: 'Georgia'),
-          home: _buildHome(),
-        );
+        return MainScreen(refresh: refreshLang);
       },
     );
   }
-
-  Widget _buildHome() {
-    if (widget.controller.isBootstrapping) return const SplashPage();
-    if (!widget.controller.isAuthenticated) {
-      return AuthPage(controller: widget.controller);
-    }
-    return MainScreen(refresh: refreshLang);
-  }
 }
 
-class SplashPage extends StatelessWidget {
-  const SplashPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFFF1F8E9),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 34,
-              backgroundColor: Color(0xFF1A1C1E),
-              child: Icon(Icons.fitness_center, color: Color(0xFFD1E683), size: 28),
-            ),
-            SizedBox(height: 18),
-            Text('Loading TrainQuest...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
+// 下面 MainScreen 代码你原样保留，不用改
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key, required this.refresh});
   final VoidCallback refresh;
