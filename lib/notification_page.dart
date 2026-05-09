@@ -12,9 +12,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   static const Color mainGreen = Color(0xFFD1E683);
   static const Color darkCard = Color(0xFF1A1C1E);
 
-  bool isMasterSwitchOn = true;
-  bool activityAlerts = true;
-  bool systemUpdates = false;
+  final bool isMasterSwitchOn = true;
 
   @override
   Widget build(BuildContext context) {
@@ -39,64 +37,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            _animatedEntrance(delay: 0, child: _buildNotificationHero()),
+            _buildNotificationHero(),
             const SizedBox(height: 30),
-            _animatedEntrance(
-              delay: 200,
-              child: ScaleTap(
-                onTap: () => setState(() => isMasterSwitchOn = !isMasterSwitchOn),
-                child: _buildMasterSwitchCard(),
-              ),
-            ),
-            const SizedBox(height: 25),
-            _animatedEntrance(
-              delay: 400,
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.only(left: 10, bottom: 15),
-                    child: Text(
-                      "Activity & Social",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            _animatedEntrance(
-              delay: 450,
-              child: _buildSettingTile(
-                Icons.directions_run,
-                "Workout Reminders",
-                "Get notified for daily goals",
-                activityAlerts,
-                (v) => setState(() => activityAlerts = v),
-              ),
-            ),
-            _animatedEntrance(
-              delay: 500,
-              child: _buildSettingTile(
-                Icons.groups_outlined,
-                "Community Updates",
-                "New likes and comments",
-                true,
-                (v) {},
-              ),
-            ),
-            _animatedEntrance(
-              delay: 550,
-              child: _buildSettingTile(
-                Icons.tips_and_updates_outlined,
-                "Smart Coaching",
-                "AI-based health tips",
-                false,
-                (v) {},
-              ),
-            ),
+            _buildMasterSwitchCard(),
             const SizedBox(height: 40),
           ],
         ),
@@ -202,7 +145,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           Switch(
             value: isMasterSwitchOn,
-            onChanged: (v) => setState(() => isMasterSwitchOn = v),
+            onChanged: null,
             activeColor: mainGreen,
           ),
         ],
@@ -210,134 +153,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  Widget _buildSettingTile(
-    IconData icon,
-    String title,
-    String sub,
-    bool val,
-    Function(bool) onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Icon(icon, color: Colors.black54, size: 20),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  Text(
-                    sub,
-                    style: const TextStyle(
-                      color: Colors.black38,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Transform.scale(
-              scale: 0.8,
-              child: Switch(
-                value: val,
-                onChanged: onChanged,
-                activeColor: mainGreen,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildIconButton(IconData icon, VoidCallback onTap) {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(8.0),
-      child: ScaleTap(
-        onTap: onTap,
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: Colors.black, size: 20),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
         ),
-      ),
-    );
-  }
-
-  Widget _animatedEntrance({required Widget child, required int delay}) {
-    return FutureBuilder(
-      future: Future.delayed(Duration(milliseconds: delay)),
-      builder: (context, snapshot) {
-        bool isDone = snapshot.connectionState == ConnectionState.done;
-        return AnimatedScale(
-          scale: isDone ? 1.0 : 0.85,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOutBack,
-          child: AnimatedOpacity(
-            opacity: isDone ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 600),
-            child: child,
-          ),
-        );
-      },
-    );
-  }
-}
-
-// 修复：类名去掉下划线，大驼峰
-class ScaleTap extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  const ScaleTap({super.key, required this.child, required this.onTap});
-
-  @override
-  State<ScaleTap> createState() => _ScaleTapState();
-}
-
-class _ScaleTapState extends State<ScaleTap> {
-  double _scale = 1.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _scale = 0.94),
-      onTapUp: (_) => setState(() => _scale = 1.0),
-      onTapCancel: () => setState(() => _scale = 1.0),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOutCubic,
-        child: widget.child,
+        child: Icon(icon, color: Colors.black, size: 20),
       ),
     );
   }
